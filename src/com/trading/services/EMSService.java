@@ -40,6 +40,38 @@ public class EMSService {
 				o.setTotalQuantity(total);
 				tempOrders.add(this.handleResponses(eqResponses, o));
 			}
+			
+			else if(total < 1000 ){
+				
+				Order tempOrder = o;
+				tempOrder.setTotalQuantity(total);
+				eqResponses.add(this.forwarding(tempOrder));
+				tempOrders.add(this.handleResponses(eqResponses, o));
+				
+			}
+			
+			else if(total > 10000 ){
+				
+				int remainder = total % 500;
+				int divisions = (total - remainder) / 500;
+				int count = 0;
+				
+				Order tempOrder = o;
+				if(remainder > 0) {
+					tempOrder.setTotalQuantity(remainder);
+					eqResponses.add(this.forwarding(tempOrder));
+				}
+				
+				while(count < divisions) {
+					tempOrder.setTotalQuantity(500);
+					eqResponses.add(this.forwarding(tempOrder));
+					count++;
+				}
+				
+				o.setTotalQuantity(total);
+				tempOrders.add(this.handleResponses(eqResponses, o));
+				
+			}
 		}
 		return tempOrders;
 	}
@@ -69,6 +101,7 @@ public class EMSService {
 		order.setActualPrice(actualPrice);
 		order.setTimeExecuted(date);
 		order.setOpenQuantity(order.getTotalQuantity() - totalAllocated);
+		
 		return order;
 	}
 }

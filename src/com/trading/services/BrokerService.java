@@ -37,15 +37,10 @@ public class BrokerService {
 		
 		return eqResponse;
 	}
-	
-	/*
-	 * UPDATE `equity`.`order` SET `Open_Quantity`=NULL, 
-	 * `Allocated_Quantity`=NULL, `Status`='0', `Actual_Price`='', 
-	 * `Time_Executed`=NULL WHERE `OrderID`='O01'
-	 */
-	
+		
 	private EquityResponse fullyExecuted(Order order) {
 		
+//		Will be supplied with api's in future
 		float actualPrice = randomFloat(order.getLimitPrice()-10, order.getLimitPrice());
 		EquityResponse result = new EquityResponse(order.getOrderId(), 0, order.getTotalQuantity(), "2", true);
 		result.setActualPrice(actualPrice);
@@ -54,12 +49,13 @@ public class BrokerService {
 	}
 	
 	private EquityResponse failedExecuted(Order order) {
-		
+//		Will be supplied with api's in future
 		EquityResponse result = new EquityResponse(order.getOrderId(), order.getTotalQuantity(), 0, "0", false);
 		return result;
 	}
 	
 	private EquityResponse partiallyExecuted(Order order) {
+//		Will be supplied with api's in future
 		int half = order.getTotalQuantity() / 2;
 		float actualPrice = randomFloat(order.getLimitPrice()-10, order.getLimitPrice());
 		EquityResponse result = new EquityResponse(order.getOrderId(), half, half, "1", true);

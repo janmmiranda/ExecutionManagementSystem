@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mysql.jdbc.PreparedStatement;
+import java.sql.PreparedStatement;
 import com.trading.models.Block;
 import com.trading.models.EquityResponse;
 import com.trading.models.Order;
@@ -20,23 +20,144 @@ public class EMSRepo {
 	
 	// JDBC driver name and database URL
 	static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-	static final String DB_URL = "jdbc:mysql://localhost/equity";
+	static final String DB_URL = "jdbc:mysql://localhost:3307/equity";
 
 	// Database credentials
 	static final String USER = "root";
-	static final String PASS = "rootroot";
+	static final String PASS = "root";
 	
-	public boolean orderUpdate(Order newOrder, EquityResponse eqResponse) {
+public boolean orderUpdate(Order newOrder) {
+	
+	boolean res = false;
+	Connection conn = null;
+	
+	try {
+		// STEP 2: Register JDBC driver
+		Class.forName(JDBC_DRIVER);
+
+		// STEP 3: Open a connection
+		System.out.println("Connecting to a selected database...");
+		conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		System.out.println("Connected database successfully...");
+
+		// STEP 4: Execute a query
+		System.out.println("Creating statement...");
+		java.sql.PreparedStatement stmt = (PreparedStatement) conn.prepareStatement(" UPDATE `equity`.`order` SET `Open_Quantity`= ? , `Allocated_Quantity`= ? , `Status`= ? , `Time_Executed`=? WHERE `OrderID`=? ;");
 		
-		return true;
-	}
-	
-	public boolean blockUpdate(Block block, EquityResponse eqResponse) {
+//		Setting open quantity
+		stmt.setInt(1, newOrder.getOpenQuantity());
+//		Setting closed quantity
+		stmt.setInt(2, newOrder.getOpenQuantity());
+//		Setting status
+		int st=1;
+		if(newOrder.getStatus().equals("Pending")) {
+			st = 1;
+		}
+		else {
+			st = 0;
+		}
+		stmt.setInt(3, st);
+//		Setting time of execution
+		stmt.setDate(4, newOrder.getTimeExecuted());
+//		Setting OrderID
+		stmt.setString(5, newOrder.getOrderId());
 		
-		return true;
-	}
+		stmt.executeUpdate();
+			
+		System.out.println("Connection closed...");
+
+	} 
+		catch (SQLException se) {
+			// Handle errors for JDBC
+			se.printStackTrace();
+		} 
+		catch (Exception e) {
+			// Handle errors for Class.forName
+			e.printStackTrace();
+		} 
 	
-	public List<Order> retrieveBlock(String blockID) {
+	
+	return res;
+}	
+			
+	
+//		Following method returns an order
+		public Order retrieveOrder(String orderID) {
+			
+			Order res = null ;
+			Connection conn = null;
+			
+			try {
+				// STEP 2: Register JDBC driver
+				Class.forName(JDBC_DRIVER);
+
+				// STEP 3: Open a connection
+				System.out.println("Connecting to a selected database...");
+				conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				System.out.println("Connected database successfully...");
+
+				// STEP 4: Execute a query
+				System.out.println("Creating statement...");
+				java.sql.PreparedStatement stmt = (PreparedStatement) conn.prepareStatement("SELECT * FROM `equity`.`order` WHERE `OrderID`= ? ;");
+				stmt.setString(1, orderID);
+				
+				ResultSet rs = stmt.executeQuery();
+				
+				while( rs.next() ) { 
+					String orderId = rs.getString("OrderID");
+					String symbol = rs.getString("Symbol");
+					String side = rs.getString("Side");
+					String type = rs.getString("Type");
+					int totalQuantity = rs.getInt("Total_Quantity");
+					String stockName = rs.getString("Stock_Name");
+					float limitPrice = rs.getFloat("Limit_Price");
+					float stopPrice = rs.getFloat("Stop_Price");
+					String manager = rs.getString("Manager");
+					String porfolioId = rs.getString("Portfolio_ID");
+					int openQuantity = rs.getInt("Open_Quantity");
+					int allocatedQuantity = rs.getInt("Allocated_Quantity");
+					String status = rs.getString("Status");
+					float actualPrice = rs.getFloat("Actual_Price");
+					Date timeCreated = rs.getDate("Time_Created");
+					Date timeExecuted = rs.getDate("Time_executed");
+					
+					res = new Order(orderId, symbol, side, type, totalQuantity, stockName, manager, porfolioId,
+							allocatedQuantity, actualPrice, timeCreated, limitPrice, stopPrice);
+					if(timeExecuted != null) {
+						res.setTimeExecuted(timeExecuted);
+					}
+					res.setOpenQuantity(openQuantity);
+					res.setAllocatedQuantity(allocatedQuantity);
+					if(status.equals("1")) {
+						res.setStatus("Pending");
+					}
+					else {
+						res.setStatus("Executed");
+					}
+					
+					
+				}
+					
+					rs.close();				
+				
+				System.out.println("Connection closed...");
+
+			}
+			catch (SQLException se) {
+				// Handle errors for JDBC
+				se.printStackTrace();
+			} 
+			catch (Exception e) {
+				// Handle errors for Class.forName
+				e.printStackTrace();
+			}
+			
+			return res;
+}
+				
+			
+//		Following method returns a block 		
+		public List<Order> retrieveBlock(String blockID) {
 		List<Order> blockOrders = new ArrayList<Order>();
 		
 		Connection conn = null;
@@ -52,7 +173,7 @@ public class EMSRepo {
 
 			// STEP 4: Execute a query
 			System.out.println("Creating statement...");
-			PreparedStatement stmt = (PreparedStatement) conn.prepareStatement(
+			java.sql.PreparedStatement stmt = (PreparedStatement) conn.prepareStatement(
 					"select * from equity.order a \r\n" + 
 					"join \r\n" + 
 					"equity.block_order b\r\n" + 
@@ -91,6 +212,7 @@ public class EMSRepo {
 										allocatedQuantity, actualPrice, timeCreated, limitPrice, stopPrice);
 				order.setTimeExecuted(timeExecuted);
 				blockOrders.add(order);
+				
 			}
 			rs.close();
 			
